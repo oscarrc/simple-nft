@@ -1,9 +1,13 @@
 import Head from 'next/head'
 import Web3 from 'web3';
+import NFToken from '../build/contracts/NFToken.json'; 
 import { useEffect, useState } from 'react'
 
 export default function Home() {
   const [account, setAccount] = useState(null);
+  const [contract, setContract] = useState(null);
+  const [totalSupply, setTotalSupply] = useState(0);
+  const [tokens, setTokens] = useState([]);
 
   const loadWeb3 = async () => {
     if (window.ethereum) {
@@ -16,12 +20,35 @@ export default function Home() {
     }
   }
   
-  const loadBlockchainData = async () => {
-    const web3 = window.web3;
-    if(web3){
-      const accounts = await web3.eth.getAccounts();
-      setAccount(accounts[0]);
+  const loadBlockchainData = async () => {   
+    const web3 = window.web3;    
+    
+    if(!web3) return;
+
+    const accounts = await web3.eth.getAccounts();
+    const netId = await web3.eth.net.getId();
+    const netData = NFToken.networks[netId];
+
+    if(!netData) return;
+
+    const abi = NFToken.abi;
+    const address = netData.address;
+    const contract = new web3.eth.Contract(abi, address);
+
+    if(!contract) return;
+
+    const totalSupply = await contract.methods.totalSupply.call();
+
+    for(let i = 1; i<= totalSupply; i++){
+      let token = await contract.methods.tokens(i - 1).call();
+      console.log(token)
+      setTokens([...tokens, token])
     }
+
+    setAccount(accounts[0] || null);
+    setContract(contract);
+    setTotalSupply(totalSupply);
+    console.log(tokens)
   }
 
   useEffect( async () => {
@@ -53,7 +80,7 @@ export default function Home() {
       </header>
 
       <main className="is-flex-grow-1">
-        <section className="hero container">
+        <section className="hero container mt-4">
           <div className="hero-body">
             <p className="title">
               NFToken
@@ -61,6 +88,12 @@ export default function Home() {
             <p className="subtitle">
               Create and sell NFTs
             </p>
+          </div>
+        </section>
+        <hr />
+        <section className="container">
+          <div className="columns">
+
           </div>
         </section>
       </main>
