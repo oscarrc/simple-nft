@@ -1,5 +1,5 @@
-const NFToken = artifacts.require("NFToken");
+const Color = artifacts.require("Color");
 
 module.exports = function (deployer) {
-  deployer.deploy(NFToken);
+  deployer.deploy(Color);
 };

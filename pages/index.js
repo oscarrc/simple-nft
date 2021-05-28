@@ -1,13 +1,13 @@
 import Head from 'next/head'
 import Web3 from 'web3';
-import NFToken from '../build/contracts/NFToken.json'; 
+import Color from '../build/contracts/Color.json'; 
 import { useEffect, useState } from 'react'
 
 export default function Home() {
   const [account, setAccount] = useState(null);
   const [contract, setContract] = useState(null);
-  const [totalSupply, setTotalSupply] = useState(0);
-  const [tokens, setTokens] = useState([]);
+  const [colors, setColors] = useState([]);
+  const [color, setColor] = useState(null);
 
   const loadWeb3 = async () => {
     if (window.ethereum) {
@@ -27,31 +27,38 @@ export default function Home() {
 
     const accounts = await web3.eth.getAccounts();
     const netId = await web3.eth.net.getId();
-    const netData = NFToken.networks[netId];
+    const netData = Color.networks[netId];
 
     if(!netData) return;
 
-    const abi = NFToken.abi;
+    const abi = Color.abi;
     const address = netData.address;
     const contract = new web3.eth.Contract(abi, address);
 
     if(!contract) return;
 
-    const totalSupply = await contract.methods.totalSupply.call();
+    const totalSupply = await contract.methods.totalSupply().call();
 
-    for(let i = 1; i<= totalSupply; i++){
-      let token = await contract.methods.tokens(i - 1).call();
-      console.log(token)
-      setTokens([...tokens, token])
+    for(let i = 0; i < totalSupply; i++){
+      let color = await contract.methods.colors(i).call();
+      setColors(colors => [...colors, color]);
     }
-
+    
     setAccount(accounts[0] || null);
     setContract(contract);
-    setTotalSupply(totalSupply);
-    console.log(tokens)
+  }
+
+  const mintToken = (event) => {
+    event.preventDefault();
+    contract.methods.mint(color).send({ from: account }).once('receipt', () => {
+      setColors([...colors, color])
+    }).on('error', (e) => {
+      console.log(e)
+    });
   }
 
   useEffect( async () => {
+    setColors([]);
     await loadWeb3();
     await loadBlockchainData();
   }, [])
@@ -59,8 +66,8 @@ export default function Home() {
   return (
     <div className="page-wrapper is-flex is-flex-direction-column">
       <Head>
-        <title>NFToken platform</title>
-        <meta name="description" content="NFToken platform" />
+        <title>Colored NFTs platform</title>
+        <meta name="description" content="Colored NFTs platform" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -68,7 +75,7 @@ export default function Home() {
         <nav className="navbar is-primary" role="navigation" aria-label="main navigation">
           <div className="navbar-brand">
             <a className="navbar-item is-size-3">            
-              NFToken
+              Color NFT
             </a>
           </div>
           <div className="navbar-end">
@@ -80,20 +87,43 @@ export default function Home() {
       </header>
 
       <main className="is-flex-grow-1">
-        <section className="hero container mt-4">
-          <div className="hero-body">
-            <p className="title">
-              NFToken
-            </p>
-            <p className="subtitle">
-              Create and sell NFTs
-            </p>
+        <section className="container mt-4">
+          <div className="columns is-flex is-align-items-center">
+            <div className="hero column">
+              <div className="hero-body">
+                <p className="title">
+                  Color (CLR)
+                </p>
+                <p className="subtitle">
+                  Colored NFTs
+                </p>
+              </div>
+            </div>
+            <div className="column is-flex is-flex-direction-column	is-align-items-center">
+              <h2 className="is-size-4">Issue a new token</h2>
+              <form className="pt-2" onSubmit={ (event) => mintToken(event) }>
+                <div className="field has-addons">
+                  <div className="control">
+                    <input className="input is-primary" type="text" placeholder="Hex color code (#FFFFFF)" onChange={(event) => setColor(event.target.value) }/>
+                  </div>
+                  <div className="control">
+                    <button type="submit" className="button is-primary">
+                      Create
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
         </section>
         <hr />
-        <section className="container">
-          <div className="columns">
-
+        <section className="container is-flex is-items-content-center is-justify-content-center">
+          <div className="tags are-large">
+            {
+              colors.map( (c, k) => {
+                return (<div className="tag has-text-white" key={k} style={{ background: c }}>{c}</div>)
+              })
+            }
           </div>
         </section>
       </main>
@@ -101,7 +131,7 @@ export default function Home() {
       <footer className="footer has-background-primary-light">
         <div className="content has-text-centered">
           <p>
-            <strong>NFToken platform</strong>
+            <strong>Colored NFT platform</strong>
           </p>
         </div>
       </footer>

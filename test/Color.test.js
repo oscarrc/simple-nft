@@ -1,16 +1,16 @@
 const { assert } = require('chai');
 
-const NFToken = artifacts.require('../contracts/NFToken.sol');
+const Color = artifacts.require('../contracts/Color.sol');
 
 require('chai')
     .use(require('chai-as-promised'))
     .should()
 
-contract("NFToken", (accounts) => {
+contract("Color", (accounts) => {
     let contract;
 
     before(async () => {        
-        contract = await NFToken.deployed();
+        contract = await Color.deployed();
     });
 
     describe('deployment', async () => {
@@ -24,18 +24,18 @@ contract("NFToken", (accounts) => {
 
         it('has name', async () => {
             const name = await contract.name();
-            assert.equal(name, 'NFToken')
+            assert.equal(name, 'Color')
         })
 
         it('has symbol', async () => {
             const symbol = await contract.symbol();
-            assert.equal(symbol, 'TOKEN')
+            assert.equal(symbol, 'CLR')
         })
     })
 
     describe('minting', async () => {
         it('creates new token', async () => {
-            const result = await contract.mint('token0');
+            const result = await contract.mint('#173F5F');
             const totalSupply = await contract.totalSupply();
             const event = result.logs[0].args;
             
@@ -46,7 +46,7 @@ contract("NFToken", (accounts) => {
             assert.equal(event.to, accounts[0], 'to correct');
 
             //FAILURE
-            await contract.mint('token0').should.be.rejected;
+            await contract.mint('#173F5F').should.be.rejected;
         })
     })
 
@@ -54,14 +54,15 @@ contract("NFToken", (accounts) => {
         it('lists tokens', async () => {
            let current;
            let result = [];
-           let expected = [0,1,2,3].map(t => `token${t}`);
+           let expected = ["#173F5F", "#20639B", "#3CAEA3", "#F6D55C", "#ED553B"];
 
-           [1,2,3].forEach( async (t) =>  await contract.mint(`token${t}`));
+           expected.slice(-4).forEach( async (t) =>  await contract.mint(t));
+
            const totalSupply = await contract.totalSupply();
            
 
-           for(let i = 1; i <= totalSupply; i++){
-               current = await contract.tokens(i - 1);
+           for(let i = 0; i < totalSupply; i++){
+               current = await contract.colors(i);
                result.push(current);
            }
 
